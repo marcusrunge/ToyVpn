@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Networking;
@@ -66,12 +67,24 @@ namespace BackgroundTask
 
         public void Encapsulate(VpnChannel channel, VpnPacketBufferList packets, VpnPacketBufferList encapulatedPackets)
         {
-            while (packets.Size > 0) encapulatedPackets.Append(packets.RemoveAtBegin());
+            //while (packets.Size > 0) encapulatedPackets.Append(packets.RemoveAtBegin());
+            while (packets.Size > 0)
+            {                
+                var vpnSendPacketBuffer = channel.GetVpnSendPacketBuffer();
+                var packet = packets.RemoveAtBegin();
+                var packetBuffer = packet.Buffer.ToArray();
+                packetBuffer.CopyTo(0, vpnSendPacketBuffer.Buffer, 0, packetBuffer.Length);
+                encapulatedPackets.Append(vpnSendPacketBuffer);
+            }
         }
 
         public void Decapsulate(VpnChannel channel, VpnPacketBuffer encapBuffer, VpnPacketBufferList decapsulatedPackets, VpnPacketBufferList controlPacketsToSend)
         {
-            decapsulatedPackets.Append(encapBuffer);
+            //decapsulatedPackets.Append(encapBuffer);
+            var vpnReceivePacketBuffer = channel.GetVpnReceivePacketBuffer();
+            var packetBuffer = encapBuffer.Buffer.ToArray();
+            packetBuffer.CopyTo(0, vpnReceivePacketBuffer.Buffer, 0, packetBuffer.Length);
+            decapsulatedPackets.Append(vpnReceivePacketBuffer);
         }
 
         IAsyncAction HandShake(DatagramSocket datagramSocket, string secret)
