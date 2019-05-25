@@ -121,8 +121,10 @@
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Enums.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ToyVpnPlugin.cs" />
+    <Compile Include="ToyVpnPluginContext.cs" />
     <Compile Include="VpnBackgroundTask.cs" />
   </ItemGroup>
   <ItemGroup>
