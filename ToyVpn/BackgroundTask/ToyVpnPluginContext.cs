@@ -20,7 +20,7 @@ namespace BackgroundTask
                 {
                     var dataWriter = new DataWriter(datagramSocket.OutputStream)
                     {
-                        UnicodeEncoding = System.Text.UnicodeEncoding.Utf8
+                        UnicodeEncoding = UnicodeEncoding.Utf8
                     };
                     dataWriter.WriteByte(0);
                     dataWriter.WriteString(secret);
