@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Networking;
@@ -11,6 +12,10 @@ namespace BackgroundTask
 {
     internal sealed class ToyVpnPluginContext
     {
+        [DllImport("ToyVpnManager.dll", EntryPoint = "Initialize", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void Initialize();
+        internal void ExternInitialize() => Initialize();
+
         internal HandshakeState HandshakeState { get; set; }
         internal IAsyncAction HandShake(DatagramSocket datagramSocket, string secret)
         {

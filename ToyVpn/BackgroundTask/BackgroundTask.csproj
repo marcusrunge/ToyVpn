@@ -132,6 +132,12 @@
       <Version>6.2.8</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ToyVpnManager\ToyVpnManager.vcxproj">
+      <Project>{662ccf8d-fb2e-4295-86a0-9855cd9a890f}</Project>
+      <Name>ToyVpnManager</Name>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
