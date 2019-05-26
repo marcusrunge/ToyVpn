@@ -11,11 +11,47 @@ using Windows.Storage.Streams;
 namespace BackgroundTask
 {
     internal sealed class ToyVpnPluginContext
-    {
-        [DllImport("ToyVpnManager.dll", EntryPoint = "Initialize", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void Initialize();
-        internal void ExternInitialize() => Initialize();
+    {     
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int CallbackTemplate(int number, IntPtr option);
+        private static CallbackTemplate _callbackTemplate;
 
+        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternInitializeCallbackTemplate", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void ExternInitializeCallbackTemplate(CallbackTemplate callbackTemplate);
+
+        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternInitializeHandshake", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        private static extern IntPtr ExternInitializeHandshake(string vpnConfig);
+        internal IntPtr InitializeHandshake(string vpnConfig) => ExternInitializeHandshake(vpnConfig);
+
+        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternHandleHandshakeResponse", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr ExternHandleHandshakeResponse(string response);
+        internal IntPtr HandleHandshakeResponse(string response) => ExternHandleHandshakeResponse(response);
+
+        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternMessageReceived", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr ExternEncapsulate(IntPtr capsule);
+        internal IntPtr Encapsulate(IntPtr capsule) => ExternEncapsulate(capsule);
+
+        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternMessageReceived", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr ExternDecapsulate(IntPtr capsule);
+        internal IntPtr Decapsulate(IntPtr capsule) => ExternDecapsulate(capsule);
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct CAPSULE
+        {
+            public int length;
+            public IntPtr payload;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct HANDSHAKE_PARAMETER
+        {
+            public int socketType;
+            public IntPtr remoteHostNamePtr;
+            public IntPtr remoteServiceNamePtr;
+            public IntPtr bytesToWritePtr;
+            public int bytesToWriteLength;
+        }
+        
         internal HandshakeState HandshakeState { get; set; }
         internal IAsyncAction HandShake(DatagramSocket datagramSocket, string secret)
         {
@@ -93,6 +129,68 @@ namespace BackgroundTask
             {
                 vpnChannel.TerminateConnection(e.Message);
             }
+        }
+
+        internal void MarshalUnmanagedArrayToManagedArray<T>(IntPtr unmanagedArray, int length, out T[] managedArray)
+        {
+            var size = Marshal.SizeOf(typeof(T));
+            managedArray = new T[length];
+            for (int i = 0; i < length; i++)
+            {
+                IntPtr intPtr = new IntPtr(unmanagedArray.ToInt64() + i * size);
+                managedArray[i] = Marshal.PtrToStructure<T>(intPtr);
+            }
+        }
+
+        internal void InitiateCallbackTemplate()
+        {
+            _callbackTemplate = new CallbackTemplate((n, o) =>
+            {
+                string option = Marshal.PtrToStringAnsi(o);
+                return 0;
+            });
+            ExternInitializeCallbackTemplate(_callbackTemplate);
+        }
+
+        internal IAsyncAction HandShakeControl()
+        {
+            return Task.Run(async () =>
+            {
+                if (HandshakeState == HandshakeState.Received) return;
+                for (int i = 0; i < 50; i++)
+                {
+                    await Task.Delay(100);
+                    switch (HandshakeState)
+                    {
+                        case HandshakeState.Waiting:
+                            break;
+                        case HandshakeState.Received:
+                            return;
+                        case HandshakeState.Canceled:
+                            throw new OperationCanceledException();
+                        default:
+                            break;
+                    }
+                }
+            }).AsAsyncAction();
+        }
+
+        internal IAsyncAction HandShake(DatagramSocket datagramSocket, byte[] bytesToWrite)
+        {
+            return Task.Run(async () =>
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    var dataWriter = new DataWriter(datagramSocket.OutputStream)
+                    {
+                        UnicodeEncoding = UnicodeEncoding.Utf8
+                    };
+                    dataWriter.WriteByte(0);
+                    dataWriter.WriteBytes(bytesToWrite);
+                    await dataWriter.StoreAsync();
+                    dataWriter.DetachStream();
+                }
+            }).AsAsyncAction();
         }
     }
 }

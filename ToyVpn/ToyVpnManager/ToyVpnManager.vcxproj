@@ -267,6 +267,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Capsule.h" />
+    <ClInclude Include="Handshake_Parameter.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Manager.h" />
   </ItemGroup>

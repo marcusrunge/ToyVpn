@@ -13,5 +13,7 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Manager.h" />
+    <ClInclude Include="Capsule.h" />
+    <ClInclude Include="Handshake_Parameter.h" />
   </ItemGroup>
 </Project>
