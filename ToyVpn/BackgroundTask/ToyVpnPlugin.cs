@@ -71,7 +71,7 @@ namespace BackgroundTask
             //while (packets.Size > 0) encapulatedPackets.Append(packets.RemoveAtBegin());
             while (packets.Size > 0)
             {                
-                var vpnSendPacketBuffer = channel.GetVpnSendPacketBuffer();
+                var vpnSendPacketBuffer = channel.GetVpnSendPacketBuffer();                
                 var packet = packets.RemoveAtBegin();
                 var packetBuffer = packet.Buffer.ToArray();
                 packetBuffer.CopyTo(0, vpnSendPacketBuffer.Buffer, 0, packetBuffer.Length);
@@ -83,6 +83,7 @@ namespace BackgroundTask
         {
             //decapsulatedPackets.Append(encapBuffer);
             var vpnReceivePacketBuffer = channel.GetVpnReceivePacketBuffer();
+            if (encapBuffer.Buffer.Length > vpnReceivePacketBuffer.Buffer.Length) return;
             var packetBuffer = encapBuffer.Buffer.ToArray();
             packetBuffer.CopyTo(0, vpnReceivePacketBuffer.Buffer, 0, packetBuffer.Length);
             decapsulatedPackets.Append(vpnReceivePacketBuffer);
