@@ -58,11 +58,12 @@ namespace BackgroundTask
         public void Disconnect(VpnChannel channel)
         {
             channel.Stop();
+            channel.PlugInContext = null;
         }
 
         public void GetKeepAlivePayload(VpnChannel channel, out VpnPacketBuffer keepAlivePacket)
         {
-            keepAlivePacket = null;
+            keepAlivePacket = new VpnPacketBuffer(null, 0, 0);
         }
 
         public void Encapsulate(VpnChannel channel, VpnPacketBufferList packets, VpnPacketBufferList encapulatedPackets)
