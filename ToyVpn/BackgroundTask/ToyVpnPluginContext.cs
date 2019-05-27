@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Networking;
@@ -27,11 +28,11 @@ namespace BackgroundTask
         private static extern IntPtr ExternHandleHandshakeResponse(string response);
         internal IntPtr HandleHandshakeResponse(string response) => ExternHandleHandshakeResponse(response);
 
-        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternMessageReceived", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternEncapsulate", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr ExternEncapsulate(IntPtr capsule);
         internal IntPtr Encapsulate(IntPtr capsule) => ExternEncapsulate(capsule);
 
-        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternMessageReceived", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternDecapsulate", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr ExternDecapsulate(IntPtr capsule);
         internal IntPtr Decapsulate(IntPtr capsule) => ExternDecapsulate(capsule);
 
@@ -53,7 +54,9 @@ namespace BackgroundTask
         }
         
         internal HandshakeState HandshakeState { get; set; }
-        internal IAsyncAction HandShake(DatagramSocket datagramSocket, string secret)
+        internal DatagramSocket DatagramSocket { get; set; }
+        
+        internal IAsyncAction Handshake(DatagramSocket datagramSocket, byte[] bytesToWrite)
         {
             return Task.Run(async () =>
             {
@@ -61,42 +64,27 @@ namespace BackgroundTask
                 {
                     var dataWriter = new DataWriter(datagramSocket.OutputStream)
                     {
-                        UnicodeEncoding = UnicodeEncoding.Utf8
+                        UnicodeEncoding = Windows.Storage.Streams.UnicodeEncoding.Utf8
                     };
                     dataWriter.WriteByte(0);
-                    dataWriter.WriteString(secret);
+                    dataWriter.WriteBytes(bytesToWrite);
                     await dataWriter.StoreAsync();
                     dataWriter.DetachStream();
                 }
-
-                for (int i = 0; i < 50; i++)
-                {
-                    await Task.Delay(100);
-                    switch (HandshakeState)
-                    {
-                        case HandshakeState.Waiting:
-                            break;
-                        case HandshakeState.Received:
-                            return;
-                        case HandshakeState.Canceled:
-                            throw new OperationCanceledException();
-                        default:
-                            break;
-                    }
-                }
             }).AsAsyncAction();
         }
-
-        internal void ConfigureAndConnect(VpnChannel vpnChannel, string parameters)
+        
+        internal void ConfigureAndConnect(VpnChannel channel, byte[] responseAsBytes)
         {
-            parameters = parameters.TrimEnd();
+            var responseAsString = Encoding.UTF8.GetString(responseAsBytes);
+            responseAsString = responseAsString.TrimEnd();
             uint mtuSize = 68;
             var assignedClientIPv4list = new List<HostName>();
             var dnsServerList = new List<HostName>();
             VpnRouteAssignment assignedRoutes = new VpnRouteAssignment();
             VpnDomainNameAssignment assignedDomainName = new VpnDomainNameAssignment();
             var ipv4InclusionRoutes = assignedRoutes.Ipv4InclusionRoutes;
-            foreach (var parameter in parameters.Split(null))
+            foreach (var parameter in responseAsString.Split(null))
             {
                 var fields = parameter.Split(",");
                 switch (fields[0])
@@ -123,11 +111,11 @@ namespace BackgroundTask
 
             try
             {
-                vpnChannel.StartExistingTransports(assignedClientIPv4list, null, null, assignedRoutes, assignedDomainName, mtuSize, mtuSize + 18, false);
+                channel.StartExistingTransports(assignedClientIPv4list, null, null, assignedRoutes, assignedDomainName, mtuSize, mtuSize + 18, false);
             }
             catch (Exception e)
             {
-                vpnChannel.TerminateConnection(e.Message);
+                channel.TerminateConnection(e.Message);
             }
         }
 
@@ -183,7 +171,7 @@ namespace BackgroundTask
                 {
                     var dataWriter = new DataWriter(datagramSocket.OutputStream)
                     {
-                        UnicodeEncoding = UnicodeEncoding.Utf8
+                        UnicodeEncoding = Windows.Storage.Streams.UnicodeEncoding.Utf8
                     };
                     dataWriter.WriteByte(0);
                     dataWriter.WriteBytes(bytesToWrite);
