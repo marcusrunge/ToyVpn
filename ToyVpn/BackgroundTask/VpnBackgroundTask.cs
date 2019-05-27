@@ -9,7 +9,7 @@ namespace BackgroundTask
         private static IVpnPlugIn CreateOrGetToyVpnPlugIn => _toyVpnPlugin ?? new ToyVpnPlugin();
         public void Run(IBackgroundTaskInstance taskInstance)
         {
-            var deferral = taskInstance.GetDeferral();            
+            var deferral = taskInstance.GetDeferral();
             VpnChannel.ProcessEventAsync(CreateOrGetToyVpnPlugIn, taskInstance.TriggerDetails);
             deferral.Complete();
         }
