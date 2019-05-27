@@ -5,11 +5,12 @@ namespace BackgroundTask
 {
     public sealed class VpnBackgroundTask : IBackgroundTask
     {
+        private static IVpnPlugIn _toyVpnPlugin;
+        private static IVpnPlugIn CreateOrGetToyVpnPlugIn => _toyVpnPlugin ?? new ToyVpnPlugin();
         public void Run(IBackgroundTaskInstance taskInstance)
         {
             var deferral = taskInstance.GetDeferral();
-            var vpnPlugIn = new ToyVpnPlugin();
-            VpnChannel.ProcessEventAsync(vpnPlugIn, taskInstance.TriggerDetails);
+            VpnChannel.ProcessEventAsync(CreateOrGetToyVpnPlugIn, taskInstance.TriggerDetails);
             deferral.Complete();
         }
     }
