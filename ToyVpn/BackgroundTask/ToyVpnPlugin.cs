@@ -105,6 +105,7 @@ namespace BackgroundTask
         {
             var vpnReceivePacketBuffer = channel.GetVpnReceivePacketBuffer();
             var encryptedPacketBuffer = encapBuffer.Buffer.ToArray();
+            if (encapBuffer.Buffer.Length > vpnReceivePacketBuffer.Buffer.Length) return;
             var encryptedCapsule = new ToyVpnPluginContext.CAPSULE
             {
                 length = encryptedPacketBuffer.Length
