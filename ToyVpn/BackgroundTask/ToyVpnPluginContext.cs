@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Windows.Foundation;
@@ -12,6 +13,7 @@ namespace BackgroundTask
     internal sealed class ToyVpnPluginContext
     {
         internal HandshakeState HandshakeState { get; set; }
+        //internal ConcurrentQueue<byte[]> ConcurrentQueue { get; set; }
         internal IAsyncAction HandShake(DatagramSocket datagramSocket, string secret)
         {
             return Task.Run(async () =>

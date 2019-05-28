@@ -10,9 +10,9 @@ using Windows.Storage.Streams;
 
 namespace BackgroundTask
 {
-    
+
     public sealed class ToyVpnPlugin : IVpnPlugIn
-    {        
+    {
         public void Connect(VpnChannel channel)
         {
             channel.PlugInContext = new ToyVpnPluginContext();
@@ -70,12 +70,15 @@ namespace BackgroundTask
         {
             //while (packets.Size > 0) encapulatedPackets.Append(packets.RemoveAtBegin());
             while (packets.Size > 0)
-            {                
-                var vpnSendPacketBuffer = channel.GetVpnSendPacketBuffer();                
+            {
+                var vpnSendPacketBuffer = channel.GetVpnSendPacketBuffer();
                 var packet = packets.RemoveAtBegin();
-                var packetBuffer = packet.Buffer.ToArray();
-                packetBuffer.CopyTo(0, vpnSendPacketBuffer.Buffer, 0, packetBuffer.Length);
-                encapulatedPackets.Append(vpnSendPacketBuffer);
+                if (packet.Buffer.Capacity <= vpnSendPacketBuffer.Buffer.Capacity)
+                {
+                    var packetBuffer = packet.Buffer.ToArray();
+                    packetBuffer.CopyTo(0, vpnSendPacketBuffer.Buffer, 0, packetBuffer.Length);
+                    encapulatedPackets.Append(vpnSendPacketBuffer);
+                }
             }
         }
 
@@ -87,6 +90,6 @@ namespace BackgroundTask
             var packetBuffer = encapBuffer.Buffer.ToArray();
             packetBuffer.CopyTo(0, vpnReceivePacketBuffer.Buffer, 0, packetBuffer.Length);
             decapsulatedPackets.Append(vpnReceivePacketBuffer);
-        }        
+        }
     }
 }
