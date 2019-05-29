@@ -68,28 +68,26 @@ namespace BackgroundTask
 
         public void Encapsulate(VpnChannel channel, VpnPacketBufferList packets, VpnPacketBufferList encapulatedPackets)
         {
-            //while (packets.Size > 0) encapulatedPackets.Append(packets.RemoveAtBegin());
             while (packets.Size > 0)
-            {
-                var vpnSendPacketBuffer = channel.GetVpnSendPacketBuffer();
+            {                
+                var VpnSendPacketBufferCapacity = channel.GetVpnSendPacketBuffer().Buffer.Capacity;
                 var packet = packets.RemoveAtBegin();
-                if (packet.Buffer.Capacity <= vpnSendPacketBuffer.Buffer.Capacity)
+                if (packet.Buffer.Capacity <= VpnSendPacketBufferCapacity)
                 {
-                    var packetBuffer = packet.Buffer.ToArray();
-                    packetBuffer.CopyTo(0, vpnSendPacketBuffer.Buffer, 0, packetBuffer.Length);
-                    encapulatedPackets.Append(vpnSendPacketBuffer);
+                    var packetBuffer = packet.Buffer.ToArray();                    
+                    packetBuffer.CopyTo(0, packet.Buffer, 0, packetBuffer.Length);                    
+                    encapulatedPackets.Append(packet);
                 }
             }
         }
 
         public void Decapsulate(VpnChannel channel, VpnPacketBuffer encapBuffer, VpnPacketBufferList decapsulatedPackets, VpnPacketBufferList controlPacketsToSend)
-        {
-            //decapsulatedPackets.Append(encapBuffer);
-            var vpnReceivePacketBuffer = channel.GetVpnReceivePacketBuffer();
-            if (encapBuffer.Buffer.Length > vpnReceivePacketBuffer.Buffer.Length) return;
+        {            
+            var vpnReceivePacketBufferCapacity = channel.GetVpnReceivePacketBuffer().Buffer.Capacity;
+            if (encapBuffer.Buffer.Capacity > vpnReceivePacketBufferCapacity) return;
             var packetBuffer = encapBuffer.Buffer.ToArray();
-            packetBuffer.CopyTo(0, vpnReceivePacketBuffer.Buffer, 0, packetBuffer.Length);
-            decapsulatedPackets.Append(vpnReceivePacketBuffer);
+            packetBuffer.CopyTo(0, encapBuffer.Buffer, 0, packetBuffer.Length);
+            decapsulatedPackets.Append(encapBuffer);
         }
     }
 }
