@@ -25,10 +25,10 @@ namespace BackgroundTask
         private delegate IntPtr InitializeHandshakeDelegate(string vpnConfig);
         internal IntPtr InitializeHandshake(string vpnConig) => new InitializeHandshakeDelegate(ExternInitializeHandshake).Invoke(vpnConig);
 
-        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternHandleHandshakeResponse", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr ExternHandleHandshakeResponse(string response);
-        private delegate IntPtr HandleHandshakeResponseDelegate(string response);
-        internal IntPtr HandleHandshakeResponse(string response) => new HandleHandshakeResponseDelegate(ExternHandleHandshakeResponse).Invoke(response);
+        //[DllImport("ToyVpnManager.dll", EntryPoint = "ExternHandleHandshakeResponse", CallingConvention = CallingConvention.Cdecl)]
+        //private static extern IntPtr ExternHandleHandshakeResponse(string response);
+        //private delegate IntPtr HandleHandshakeResponseDelegate(string response);
+        //internal IntPtr HandleHandshakeResponse(string response) => new HandleHandshakeResponseDelegate(ExternHandleHandshakeResponse).Invoke(response);
 
         [DllImport("ToyVpnManager.dll", EntryPoint = "ExternEncapsulate", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr ExternEncapsulate(IntPtr capsule);

@@ -28,7 +28,8 @@ namespace BackgroundTask
             var handshakeParameterStruct = Marshal.PtrToStructure<ToyVpnPluginContext.HANDSHAKE_PARAMETER>(handshakeParameterPointer);            
             var remoteHostName = Marshal.PtrToStringAnsi(handshakeParameterStruct.remoteHostNamePtr);
             var remoteServiceName = Marshal.PtrToStringAnsi(handshakeParameterStruct.remoteServiceNamePtr);
-            Marshal.FreeCoTaskMem(handshakeParameterPointer);
+            Marshal.FreeCoTaskMem(handshakeParameterStruct.remoteHostNamePtr);
+            Marshal.FreeCoTaskMem(handshakeParameterStruct.remoteServiceNamePtr);            
 
             byte[] responseAsBytes = null;
 
@@ -59,6 +60,8 @@ namespace BackgroundTask
             ((ToyVpnPluginContext)channel.PlugInContext).HandshakeState = HandshakeState.Waiting;
 
             ((ToyVpnPluginContext)channel.PlugInContext).MarshalUnmanagedArrayToManagedArray<byte>(handshakeParameterStruct.bytesToWritePtr, handshakeParameterStruct.bytesToWriteLength, out byte[] bytesToWrite);
+            Marshal.FreeCoTaskMem(handshakeParameterStruct.bytesToWritePtr);
+            Marshal.FreeCoTaskMem(handshakeParameterPointer);
             ((ToyVpnPluginContext)channel.PlugInContext).Handshake(((ToyVpnPluginContext)channel.PlugInContext).DatagramSocket, bytesToWrite).AsTask().Wait(); 
             ((ToyVpnPluginContext)channel.PlugInContext).HandShakeControl().AsTask().Wait();
 
@@ -90,7 +93,7 @@ namespace BackgroundTask
                     {
                         length = packetBuffer.Length
                     };
-                    int size = Marshal.SizeOf(packetBuffer[0]) * packetBuffer.Length;
+                    int size = Marshal.SizeOf(typeof(byte)) * packetBuffer.Length;
                     unencryptedCapsule.payload = Marshal.AllocHGlobal(size);
                     Marshal.Copy(packetBuffer, 0, unencryptedCapsule.payload, packetBuffer.Length);
                     IntPtr unencryptedCapsulePtr = Marshal.AllocHGlobal(Marshal.SizeOf(unencryptedCapsule));
@@ -113,7 +116,7 @@ namespace BackgroundTask
             {
                 length = encapBufferBuffer.Length
             };
-            int size = Marshal.SizeOf(encapBufferBuffer[0]) * encapBufferBuffer.Length;
+            int size = Marshal.SizeOf(typeof(byte)) * encapBufferBuffer.Length;
             encryptedCapsule.payload = Marshal.AllocHGlobal(size);
             Marshal.Copy(encapBufferBuffer, 0, encryptedCapsule.payload, encapBufferBuffer.Length);
             IntPtr encryptedCapsulePtr = Marshal.AllocHGlobal(Marshal.SizeOf(encryptedCapsule));

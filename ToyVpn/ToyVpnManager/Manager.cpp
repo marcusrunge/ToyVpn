@@ -60,12 +60,12 @@ struct HANDSHAKE_PARAMETER* ExternInitializeHandshake(char* vpnConfig)
 	return handshakeParameter;
 }
 
-CAPSULE* ExternEncapsulate(CAPSULE* capsuleToEncapsulate)
+struct CAPSULE* ExternEncapsulate(struct CAPSULE* capsuleToEncapsulate)
 {
 	return capsuleToEncapsulate;
 }
 
-CAPSULE* ExternDecapsulate(CAPSULE* capsuleToDecapsulate)
+struct CAPSULE* ExternDecapsulate(struct CAPSULE* capsuleToDecapsulate)
 {
 	return capsuleToDecapsulate;
 }
