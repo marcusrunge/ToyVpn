@@ -74,55 +74,53 @@ namespace BackgroundTask
 
         public void GetKeepAlivePayload(VpnChannel channel, out VpnPacketBuffer keepAlivePacket)
         {
-            keepAlivePacket = new VpnPacketBuffer(null, 0, 0);
+            keepAlivePacket = new VpnPacketBuffer(channel.GetVpnSendPacketBuffer(), 0, 0);
         }
 
         public void Encapsulate(VpnChannel channel, VpnPacketBufferList packets, VpnPacketBufferList encapulatedPackets)
         {
             while (packets.Size > 0)
-            {
-                var vpnSendPacketBuffer = channel.GetVpnSendPacketBuffer();
-                var unencryptedPackets = packets.RemoveAtBegin();
-                if (unencryptedPackets.Buffer.Capacity <= vpnSendPacketBuffer.Buffer.Capacity)
+            {                
+                var packet = packets.RemoveAtBegin();
+                if (packet.Buffer.Capacity <= ushort.MaxValue)
                 {
-                    var unencryptedPacketBuffer = unencryptedPackets.Buffer.ToArray();
+                    var packetBuffer = packet.Buffer.ToArray();
                     var unencryptedCapsule = new ToyVpnPluginContext.CAPSULE
                     {
-                        length = unencryptedPacketBuffer.Length
+                        length = packetBuffer.Length
                     };
-                    int size = Marshal.SizeOf(unencryptedPacketBuffer[0]) * unencryptedPacketBuffer.Length;
+                    int size = Marshal.SizeOf(packetBuffer[0]) * packetBuffer.Length;
                     unencryptedCapsule.payload = Marshal.AllocHGlobal(size);
-                    Marshal.Copy(unencryptedPacketBuffer, 0, unencryptedCapsule.payload, unencryptedPacketBuffer.Length);
+                    Marshal.Copy(packetBuffer, 0, unencryptedCapsule.payload, packetBuffer.Length);
                     IntPtr unencryptedCapsulePtr = Marshal.AllocHGlobal(Marshal.SizeOf(unencryptedCapsule));
                     Marshal.StructureToPtr(unencryptedCapsule, unencryptedCapsulePtr, true);
                     var encryptedCapsulePtr = ((ToyVpnPluginContext)channel.PlugInContext).Encapsulate(unencryptedCapsulePtr);
                     var encryptedCapsule = (ToyVpnPluginContext.CAPSULE)Marshal.PtrToStructure(encryptedCapsulePtr, typeof(ToyVpnPluginContext.CAPSULE));
                     ((ToyVpnPluginContext)channel.PlugInContext).MarshalUnmanagedArrayToManagedArray(encryptedCapsule.payload, encryptedCapsule.length, out byte[] encryptedPacketBuffer);
-                    encryptedPacketBuffer.CopyTo(0, vpnSendPacketBuffer.Buffer, 0, encryptedPacketBuffer.Length);
-                    encapulatedPackets.Append(vpnSendPacketBuffer);
+                    encryptedPacketBuffer.CopyTo(0, packet.Buffer, 0, encryptedPacketBuffer.Length);
+                    encapulatedPackets.Append(packet);
                 }
             }
         }
 
         public void Decapsulate(VpnChannel channel, VpnPacketBuffer encapBuffer, VpnPacketBufferList decapsulatedPackets, VpnPacketBufferList controlPacketsToSend)
-        {
-            var vpnReceivePacketBuffer = channel.GetVpnReceivePacketBuffer();
-            var encryptedPacketBuffer = encapBuffer.Buffer.ToArray();
-            if (encapBuffer.Buffer.Length > vpnReceivePacketBuffer.Buffer.Length) return;
+        {            
+            var encapBufferBuffer = encapBuffer.Buffer.ToArray();
+            if (encapBuffer.Buffer.Length > ushort.MaxValue) return;
             var encryptedCapsule = new ToyVpnPluginContext.CAPSULE
             {
-                length = encryptedPacketBuffer.Length
+                length = encapBufferBuffer.Length
             };
-            int size = Marshal.SizeOf(encryptedPacketBuffer[0]) * encryptedPacketBuffer.Length;
+            int size = Marshal.SizeOf(encapBufferBuffer[0]) * encapBufferBuffer.Length;
             encryptedCapsule.payload = Marshal.AllocHGlobal(size);
-            Marshal.Copy(encryptedPacketBuffer, 0, encryptedCapsule.payload, encryptedPacketBuffer.Length);
+            Marshal.Copy(encapBufferBuffer, 0, encryptedCapsule.payload, encapBufferBuffer.Length);
             IntPtr encryptedCapsulePtr = Marshal.AllocHGlobal(Marshal.SizeOf(encryptedCapsule));
             Marshal.StructureToPtr(encryptedCapsule, encryptedCapsulePtr, true);
             var unencryptedCapsulePtr = ((ToyVpnPluginContext)channel.PlugInContext).Encapsulate(encryptedCapsulePtr);
             var unencryptedCapsule = (ToyVpnPluginContext.CAPSULE)Marshal.PtrToStructure(unencryptedCapsulePtr, typeof(ToyVpnPluginContext.CAPSULE));
             ((ToyVpnPluginContext)channel.PlugInContext).MarshalUnmanagedArrayToManagedArray(unencryptedCapsule.payload, unencryptedCapsule.length, out byte[] unencryptedPacketBuffer);
-            unencryptedPacketBuffer.CopyTo(0, vpnReceivePacketBuffer.Buffer, 0, unencryptedPacketBuffer.Length);
-            decapsulatedPackets.Append(vpnReceivePacketBuffer);
+            unencryptedPacketBuffer.CopyTo(0, encapBuffer.Buffer, 0, unencryptedPacketBuffer.Length);
+            decapsulatedPackets.Append(encapBuffer);
         }        
     }
 }
