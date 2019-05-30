@@ -97,6 +97,7 @@ namespace BackgroundTask
                     var encryptedCapsulePtr = ((ToyVpnPluginContext)channel.PlugInContext).Encapsulate(unencryptedCapsulePtr);
                     var encryptedCapsule = (ToyVpnPluginContext.CAPSULE)Marshal.PtrToStructure(encryptedCapsulePtr, typeof(ToyVpnPluginContext.CAPSULE));
                     ((ToyVpnPluginContext)channel.PlugInContext).MarshalUnmanagedArrayToManagedArray(encryptedCapsule.payload, encryptedCapsule.length, out byte[] encryptedPacketBuffer);
+                    Marshal.FreeHGlobal(unencryptedCapsulePtr);
                     encryptedPacketBuffer.CopyTo(0, packet.Buffer, 0, encryptedPacketBuffer.Length);
                     encapulatedPackets.Append(packet);
                 }
@@ -119,6 +120,7 @@ namespace BackgroundTask
             var unencryptedCapsulePtr = ((ToyVpnPluginContext)channel.PlugInContext).Encapsulate(encryptedCapsulePtr);
             var unencryptedCapsule = (ToyVpnPluginContext.CAPSULE)Marshal.PtrToStructure(unencryptedCapsulePtr, typeof(ToyVpnPluginContext.CAPSULE));
             ((ToyVpnPluginContext)channel.PlugInContext).MarshalUnmanagedArrayToManagedArray(unencryptedCapsule.payload, unencryptedCapsule.length, out byte[] unencryptedPacketBuffer);
+            Marshal.FreeHGlobal(encryptedCapsulePtr);
             unencryptedPacketBuffer.CopyTo(0, encapBuffer.Buffer, 0, unencryptedPacketBuffer.Length);
             decapsulatedPackets.Append(encapBuffer);
         }        

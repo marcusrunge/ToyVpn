@@ -13,28 +13,32 @@ namespace BackgroundTask
 {
     internal sealed class ToyVpnPluginContext
     {     
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int CallbackTemplate(int number, IntPtr option);
-        private static CallbackTemplate _callbackTemplate;
+        //[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        //private delegate int CallbackTemplate(int number, IntPtr option);
+        //private static CallbackTemplate _callbackTemplate;
 
-        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternInitializeCallbackTemplate", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void ExternInitializeCallbackTemplate(CallbackTemplate callbackTemplate);
+        //[DllImport("ToyVpnManager.dll", EntryPoint = "ExternInitializeCallbackTemplate", CallingConvention = CallingConvention.Cdecl)]
+        //private static extern void ExternInitializeCallbackTemplate(CallbackTemplate callbackTemplate);
 
         [DllImport("ToyVpnManager.dll", EntryPoint = "ExternInitializeHandshake", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        private static extern IntPtr ExternInitializeHandshake(string vpnConfig);
-        internal IntPtr InitializeHandshake(string vpnConfig) => ExternInitializeHandshake(vpnConfig);
+        private static extern IntPtr ExternInitializeHandshake(string vpnConfig);        
+        private delegate IntPtr InitializeHandshakeDelegate(string vpnConfig);
+        internal IntPtr InitializeHandshake(string vpnConig) => new InitializeHandshakeDelegate(ExternInitializeHandshake).Invoke(vpnConig);
 
         [DllImport("ToyVpnManager.dll", EntryPoint = "ExternHandleHandshakeResponse", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr ExternHandleHandshakeResponse(string response);
-        internal IntPtr HandleHandshakeResponse(string response) => ExternHandleHandshakeResponse(response);
+        private delegate IntPtr HandleHandshakeResponseDelegate(string response);
+        internal IntPtr HandleHandshakeResponse(string response) => new HandleHandshakeResponseDelegate(ExternHandleHandshakeResponse).Invoke(response);
 
         [DllImport("ToyVpnManager.dll", EntryPoint = "ExternEncapsulate", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr ExternEncapsulate(IntPtr capsule);
-        internal IntPtr Encapsulate(IntPtr capsule) => ExternEncapsulate(capsule);
+        private delegate IntPtr EncapsulateDelegate(IntPtr capsule);
+        internal IntPtr Encapsulate(IntPtr capsule) => new EncapsulateDelegate(ExternEncapsulate).Invoke(capsule);
 
         [DllImport("ToyVpnManager.dll", EntryPoint = "ExternDecapsulate", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr ExternDecapsulate(IntPtr capsule);
-        internal IntPtr Decapsulate(IntPtr capsule) => ExternDecapsulate(capsule);
+        private delegate IntPtr DecapsulateDelegate(IntPtr capsule);
+        internal IntPtr Decapsulate(IntPtr capsule) => new DecapsulateDelegate(ExternDecapsulate).Invoke(capsule);
 
         [StructLayout(LayoutKind.Sequential)]
         internal struct CAPSULE
@@ -130,15 +134,15 @@ namespace BackgroundTask
             }
         }
 
-        internal void InitiateCallbackTemplate()
-        {
-            _callbackTemplate = new CallbackTemplate((n, o) =>
-            {
-                string option = Marshal.PtrToStringAnsi(o);
-                return 0;
-            });
-            ExternInitializeCallbackTemplate(_callbackTemplate);
-        }
+        //internal void InitiateCallbackTemplate()
+        //{
+        //    _callbackTemplate = new CallbackTemplate((n, o) =>
+        //    {
+        //        string option = Marshal.PtrToStringAnsi(o);
+        //        return 0;
+        //    });
+        //    ExternInitializeCallbackTemplate(_callbackTemplate);
+        //}
 
         internal IAsyncAction HandShakeControl()
         {
