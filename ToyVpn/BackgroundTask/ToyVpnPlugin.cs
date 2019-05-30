@@ -54,14 +54,14 @@ namespace BackgroundTask
             //    }
             //}
 
-            ((ToyVpnPluginContext)channel.PlugInContext).DatagramSocket.ConnectAsync(new HostName(remoteHostName), remoteServiceName).AsTask().GetAwaiter().GetResult();
+            ((ToyVpnPluginContext)channel.PlugInContext).DatagramSocket.ConnectAsync(new HostName(remoteHostName), remoteServiceName).AsTask().Wait();
             ((ToyVpnPluginContext)channel.PlugInContext).HandshakeState = HandshakeState.Waiting;
 
             ((ToyVpnPluginContext)channel.PlugInContext).MarshalUnmanagedArrayToManagedArray<byte>(handshakeParameterStruct.bytesToWritePtr, handshakeParameterStruct.bytesToWriteLength, out byte[] bytesToWrite);
-            ((ToyVpnPluginContext)channel.PlugInContext).Handshake(((ToyVpnPluginContext)channel.PlugInContext).DatagramSocket, bytesToWrite).AsTask().GetAwaiter().GetResult();
-            ((ToyVpnPluginContext)channel.PlugInContext).HandShakeControl().AsTask().GetAwaiter().GetResult();
+            ((ToyVpnPluginContext)channel.PlugInContext).Handshake(((ToyVpnPluginContext)channel.PlugInContext).DatagramSocket, bytesToWrite).AsTask().Wait(); 
+            ((ToyVpnPluginContext)channel.PlugInContext).HandShakeControl().AsTask().Wait();
 
-            
+
             if (((ToyVpnPluginContext)channel.PlugInContext).HandshakeState == HandshakeState.Received) ((ToyVpnPluginContext)channel.PlugInContext).ConfigureAndConnect(channel, responseAsBytes);
             else channel.Stop();
         }
