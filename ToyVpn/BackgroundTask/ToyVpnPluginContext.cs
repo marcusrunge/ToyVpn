@@ -13,7 +13,7 @@ namespace BackgroundTask
 {
     internal sealed class ToyVpnPluginContext
     {     
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate int CallbackTemplate(int number, IntPtr option);
         private static CallbackTemplate _callbackTemplate;
 

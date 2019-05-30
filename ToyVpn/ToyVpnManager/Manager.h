@@ -5,7 +5,7 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif	
-	typedef int(__stdcall* CallbackTemplate)(int number, char* option);
+	typedef int(__cdecl* CallbackTemplate)(int number, char* option);
 	__declspec(dllexport) char* ExternHandleHandshakeResponse(char* response);
 	__declspec(dllexport) void ExternInitializeCallbackTemplate(CallbackTemplate callbackTemplate);
 	__declspec(dllexport) struct HANDSHAKE_PARAMETER* ExternInitializeHandshake(char* vpnConfig);
