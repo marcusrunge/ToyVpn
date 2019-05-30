@@ -63,16 +63,15 @@ namespace BackgroundTask
 
         public void GetKeepAlivePayload(VpnChannel channel, out VpnPacketBuffer keepAlivePacket)
         {
-            keepAlivePacket = new VpnPacketBuffer(null, 0, 0);
+            keepAlivePacket = new VpnPacketBuffer(channel.GetVpnSendPacketBuffer(), 0, 0);
         }
 
         public void Encapsulate(VpnChannel channel, VpnPacketBufferList packets, VpnPacketBufferList encapulatedPackets)
         {
             while (packets.Size > 0)
-            {                
-                var VpnSendPacketBufferCapacity = channel.GetVpnSendPacketBuffer().Buffer.Capacity;
+            {   
                 var packet = packets.RemoveAtBegin();
-                if (packet.Buffer.Capacity <= VpnSendPacketBufferCapacity)
+                if (packet.Buffer.Capacity <= ushort.MaxValue)
                 {
                     var packetBuffer = packet.Buffer.ToArray();                    
                     packetBuffer.CopyTo(0, packet.Buffer, 0, packetBuffer.Length);                    
@@ -83,8 +82,7 @@ namespace BackgroundTask
 
         public void Decapsulate(VpnChannel channel, VpnPacketBuffer encapBuffer, VpnPacketBufferList decapsulatedPackets, VpnPacketBufferList controlPacketsToSend)
         {            
-            var vpnReceivePacketBufferCapacity = channel.GetVpnReceivePacketBuffer().Buffer.Capacity;
-            if (encapBuffer.Buffer.Capacity > vpnReceivePacketBufferCapacity) return;
+            if (encapBuffer.Buffer.Capacity > ushort.MaxValue) return;
             var packetBuffer = encapBuffer.Buffer.ToArray();
             packetBuffer.CopyTo(0, encapBuffer.Buffer, 0, packetBuffer.Length);
             decapsulatedPackets.Append(encapBuffer);
