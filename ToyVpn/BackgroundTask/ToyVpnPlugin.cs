@@ -25,9 +25,10 @@ namespace BackgroundTask
                             + "test\n"
                             + "udp";
             var handshakeParameterPointer = ((ToyVpnPluginContext)channel.PlugInContext).InitializeHandshake(vpnConfig);
-            var handshakeParameterStruct = Marshal.PtrToStructure<ToyVpnPluginContext.HANDSHAKE_PARAMETER>(handshakeParameterPointer);
+            var handshakeParameterStruct = Marshal.PtrToStructure<ToyVpnPluginContext.HANDSHAKE_PARAMETER>(handshakeParameterPointer);            
             var remoteHostName = Marshal.PtrToStringAnsi(handshakeParameterStruct.remoteHostNamePtr);
             var remoteServiceName = Marshal.PtrToStringAnsi(handshakeParameterStruct.remoteServiceNamePtr);
+            Marshal.FreeCoTaskMem(handshakeParameterPointer);
 
             byte[] responseAsBytes = null;
 
