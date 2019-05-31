@@ -12,43 +12,43 @@ using Windows.Storage.Streams;
 namespace BackgroundTask
 {
     internal sealed class ToyVpnPluginContext
-    {     
+    {
         //[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         //private delegate int CallbackTemplate(int number, IntPtr option);
         //private static CallbackTemplate _callbackTemplate;
 
-        //[DllImport("ToyVpnManager.dll", EntryPoint = "ExternInitializeCallbackTemplate", CallingConvention = CallingConvention.Cdecl)]
+        //[DllImport("ToyVpnManager.dll", EntryPoint = "ExternInitializeCallbackTemplate", CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         //private static extern void ExternInitializeCallbackTemplate(CallbackTemplate callbackTemplate);
 
-        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternInitializeHandshake", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        private static extern IntPtr ExternInitializeHandshake(string vpnConfig);        
+        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternInitializeHandshake", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, SetLastError = true)]
+        private static extern IntPtr ExternInitializeHandshake([MarshalAs(UnmanagedType.LPStr)] string vpnConfig);        
         private delegate IntPtr InitializeHandshakeDelegate(string vpnConfig);
         internal IntPtr InitializeHandshake(string vpnConig) => new InitializeHandshakeDelegate(ExternInitializeHandshake).Invoke(vpnConig);
 
-        //[DllImport("ToyVpnManager.dll", EntryPoint = "ExternHandleHandshakeResponse", CallingConvention = CallingConvention.Cdecl)]
-        //private static extern IntPtr ExternHandleHandshakeResponse(string response);
+        //[DllImport("ToyVpnManager.dll", EntryPoint = "ExternHandleHandshakeResponse", CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
+        //private static extern IntPtr ExternHandleHandshakeResponse([MarshalAs (UnmanagedType.LPStr)] string response);
         //private delegate IntPtr HandleHandshakeResponseDelegate(string response);
         //internal IntPtr HandleHandshakeResponse(string response) => new HandleHandshakeResponseDelegate(ExternHandleHandshakeResponse).Invoke(response);
 
-        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternEncapsulate", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr ExternEncapsulate(IntPtr capsule);
-        private delegate IntPtr EncapsulateDelegate(IntPtr capsule);
-        internal IntPtr Encapsulate(IntPtr capsule) => new EncapsulateDelegate(ExternEncapsulate).Invoke(capsule);
+        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternEncapsulate", CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
+        private unsafe static extern IntPtr ExternEncapsulate(ref CAPSULE* capsule);
+        private unsafe delegate IntPtr EncapsulateDelegate(ref CAPSULE* capsule);
+        internal unsafe IntPtr Encapsulate(ref CAPSULE* capsule) => new EncapsulateDelegate(ExternEncapsulate).Invoke(ref capsule);
 
-        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternDecapsulate", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr ExternDecapsulate(IntPtr capsule);
-        private delegate IntPtr DecapsulateDelegate(IntPtr capsule);
-        internal IntPtr Decapsulate(IntPtr capsule) => new DecapsulateDelegate(ExternDecapsulate).Invoke(capsule);
+        [DllImport("ToyVpnManager.dll", EntryPoint = "ExternDecapsulate", CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
+        private unsafe static extern IntPtr ExternDecapsulate(ref CAPSULE* capsule);
+        private unsafe delegate IntPtr DecapsulateDelegate(ref CAPSULE* capsule);
+        internal unsafe IntPtr Decapsulate(ref CAPSULE* capsule) => new DecapsulateDelegate(ExternDecapsulate).Invoke(ref capsule);
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct CAPSULE
+        internal unsafe struct CAPSULE
         {
             public int length;
-            public IntPtr payload;
+            public byte* payload;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct HANDSHAKE_PARAMETER
+        internal unsafe struct HANDSHAKE_PARAMETER
         {
             public int socketType;
             public IntPtr remoteHostNamePtr;
