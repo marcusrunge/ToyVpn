@@ -115,7 +115,7 @@ namespace BackgroundTask
 
             try
             {
-                channel.StartExistingTransports(assignedClientIPv4list, null, null, assignedRoutes, assignedDomainName, mtuSize, ushort.MaxValue, false);
+                channel.StartExistingTransports(assignedClientIPv4list, null, null, assignedRoutes, assignedDomainName, mtuSize, short.MaxValue, false);
             }
             catch (Exception e)
             {

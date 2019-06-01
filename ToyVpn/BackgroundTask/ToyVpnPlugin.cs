@@ -86,7 +86,7 @@ namespace BackgroundTask
             while (packets.Size > 0)
             {
                 var packet = packets.RemoveAtBegin();
-                if (packet.Buffer.Capacity <= ushort.MaxValue && (ToyVpnPluginContext)channel.PlugInContext != null)
+                if (packet.Buffer.Capacity <= short.MaxValue && (ToyVpnPluginContext)channel.PlugInContext != null)
                 {
                     var packetBuffer = packet.Buffer.ToArray();
                     ToyVpnPluginContext.CAPSULE* unencryptedCapsule = (ToyVpnPluginContext.CAPSULE*)Marshal.AllocHGlobal(sizeof(ToyVpnPluginContext.CAPSULE)).ToPointer();
@@ -121,7 +121,7 @@ namespace BackgroundTask
         public unsafe void Decapsulate(VpnChannel channel, VpnPacketBuffer encapBuffer, VpnPacketBufferList decapsulatedPackets, VpnPacketBufferList controlPacketsToSend)
         {
             var encapBufferBuffer = encapBuffer.Buffer.ToArray();
-            if (encapBuffer.Buffer.Length > ushort.MaxValue || (ToyVpnPluginContext)channel.PlugInContext == null) return;
+            if (encapBuffer.Buffer.Length > short.MaxValue || (ToyVpnPluginContext)channel.PlugInContext == null) return;
             ToyVpnPluginContext.CAPSULE* encryptedCapsule = (ToyVpnPluginContext.CAPSULE*)Marshal.AllocHGlobal(sizeof(ToyVpnPluginContext.CAPSULE)).ToPointer();
             encryptedCapsule->length = encapBufferBuffer.Length;
             encryptedCapsule->payload = (byte*)Marshal.AllocHGlobal(encapBufferBuffer.Length * sizeof(byte)).ToPointer();
