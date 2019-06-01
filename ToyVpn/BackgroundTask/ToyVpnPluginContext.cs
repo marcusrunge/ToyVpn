@@ -87,6 +87,10 @@ namespace BackgroundTask
             var dnsServerList = new List<HostName>();
             VpnRouteAssignment assignedRoutes = new VpnRouteAssignment();
             VpnDomainNameAssignment assignedDomainName = new VpnDomainNameAssignment();
+            VpnNamespaceAssignment namespaceScope = new VpnNamespaceAssignment
+            {
+                NamespaceList = new List<VpnNamespaceInfo>()
+            };
             var ipv4InclusionRoutes = assignedRoutes.Ipv4InclusionRoutes;
             foreach (var parameter in responseAsString.Split(null))
             {
@@ -112,10 +116,13 @@ namespace BackgroundTask
 
             assignedRoutes.Ipv4InclusionRoutes = ipv4InclusionRoutes;
             assignedDomainName.DomainNameList.Add(new VpnDomainNameInfo(".", VpnDomainNameType.Suffix, dnsServerList, null));
+            namespaceScope.NamespaceList.Add(new VpnNamespaceInfo(".", dnsServerList, null));
 
             try
             {
                 channel.StartExistingTransports(assignedClientIPv4list, null, null, assignedRoutes, assignedDomainName, mtuSize, (uint)short.MaxValue, false);
+                //channel.StartWithMainTransport(assignedClientIPv4list, null, null, assignedRoutes, assignedDomainName, mtuSize, (uint)short.MaxValue, false, DatagramSocket);
+                //channel.Start(assignedClientIPv4list, null, null, assignedRoutes, namespaceScope, mtuSize, (uint)short.MaxValue, false, DatagramSocket, null);
             }
             catch (Exception e)
             {
