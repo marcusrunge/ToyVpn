@@ -104,11 +104,11 @@ namespace BackgroundTask
                     {
                         packetBuffer[i] = encryptedCapsule.payload[i];
 #if DEBUG
-                        System.Diagnostics.Debug.Write(Convert.ToChar(packetBuffer[i]));
+                        System.Diagnostics.Debug.Write(packetBuffer[i]);
 #endif
                     }
 #if DEBUG
-                    System.Diagnostics.Debug.WriteLine(null);
+                    System.Diagnostics.Debug.WriteLine("\n");
 #endif
                     Marshal.FreeHGlobal(new IntPtr(unencryptedCapsule));
                     var vpnPacketBuffer = new VpnPacketBuffer(packet, 0, packet.Buffer.Length);
@@ -137,11 +137,11 @@ namespace BackgroundTask
             {
                 encapBufferBuffer[i] = unencryptedCapsule.payload[i];
 #if DEBUG
-                System.Diagnostics.Debug.Write(Convert.ToChar(encapBufferBuffer[i]));
+                System.Diagnostics.Debug.Write(encapBufferBuffer[i]);
 #endif
             }
 #if DEBUG
-            System.Diagnostics.Debug.WriteLine(null);
+            System.Diagnostics.Debug.WriteLine("\n");
 #endif
             Marshal.FreeHGlobal(new IntPtr(encryptedCapsule));
             var vpnPacketBuffer = new VpnPacketBuffer(encapBuffer, 0, encapBuffer.Buffer.Length);
