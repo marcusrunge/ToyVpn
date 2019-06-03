@@ -108,7 +108,7 @@ namespace BackgroundTask
 #endif
                     }
 #if DEBUG
-                    System.Diagnostics.Debug.WriteLine(null);
+                    System.Diagnostics.Debug.WriteLine("\n");
 #endif
                     Marshal.FreeHGlobal(new IntPtr(unencryptedCapsule));
                     var vpnPacketBuffer = new VpnPacketBuffer(packet, 0, packet.Buffer.Length);
@@ -141,7 +141,7 @@ namespace BackgroundTask
 #endif
             }
 #if DEBUG
-            System.Diagnostics.Debug.WriteLine(null);
+            System.Diagnostics.Debug.WriteLine("\n");
 #endif
             Marshal.FreeHGlobal(new IntPtr(encryptedCapsule));
             var vpnPacketBuffer = new VpnPacketBuffer(encapBuffer, 0, encapBuffer.Buffer.Length);
