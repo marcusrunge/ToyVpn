@@ -104,7 +104,7 @@ namespace BackgroundTask
                     {
                         packetBuffer[i] = encryptedCapsule.payload[i];
 #if DEBUG
-                        System.Diagnostics.Debug.Write(Convert.ToChar(packetBuffer[i]));
+                        System.Diagnostics.Debug.Write(packetBuffer[i]);
 #endif
                     }
 #if DEBUG
@@ -137,7 +137,7 @@ namespace BackgroundTask
             {
                 encapBufferBuffer[i] = unencryptedCapsule.payload[i];
 #if DEBUG
-                System.Diagnostics.Debug.Write(Convert.ToChar(encapBufferBuffer[i]));
+                System.Diagnostics.Debug.Write(encapBufferBuffer[i]);
 #endif
             }
 #if DEBUG

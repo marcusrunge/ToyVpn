@@ -120,8 +120,8 @@ namespace BackgroundTask
 
             try
             {
-                channel.StartExistingTransports(assignedClientIPv4list, null, null, assignedRoutes, assignedDomainName, mtuSize, (uint)short.MaxValue, false);
-                //channel.StartWithMainTransport(assignedClientIPv4list, null, null, assignedRoutes, assignedDomainName, mtuSize, (uint)short.MaxValue, false, DatagramSocket);
+                //channel.StartExistingTransports(assignedClientIPv4list, null, null, assignedRoutes, assignedDomainName, mtuSize, (uint)short.MaxValue, false);
+                channel.StartWithMainTransport(assignedClientIPv4list, null, null, assignedRoutes, assignedDomainName, mtuSize, (uint)short.MaxValue, false, DatagramSocket);
                 //channel.Start(assignedClientIPv4list, null, null, assignedRoutes, namespaceScope, mtuSize, (uint)short.MaxValue, false, DatagramSocket, null);
             }
             catch (Exception e)
