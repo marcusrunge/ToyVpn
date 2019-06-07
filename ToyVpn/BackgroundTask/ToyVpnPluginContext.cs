@@ -85,7 +85,7 @@ namespace BackgroundTask
                         {
                             UnicodeEncoding = UnicodeEncoding.Utf8
                         };
-                        dataWriter.WriteBytes(decapsulationPacket);
+                        dataWriter.WriteBytes(GetSstpFrame(decapsulationPacket));
                         dataWriter.StoreAsync().AsTask().Wait();
                         dataWriter.DetachStream();
                         dataWriter.Dispose();
@@ -179,6 +179,22 @@ namespace BackgroundTask
             _tunnel.Dispose();
             _mainOuterTunnelTransportEndpoint.CancelIOAsync().AsTask().Wait();
             _mainOuterTunnelTransportEndpoint.Dispose();
+        }
+
+        byte[] GetSstpFrame(byte[] bytes)
+        {
+            int bytesLength = bytes.Length + 4;
+            byte[] sstpFrame = new byte[bytesLength];
+            var length = BitConverter.GetBytes(bytesLength);
+            sstpFrame[0] = 0x10;
+            sstpFrame[1] = 0x0;
+            sstpFrame[2] = length[1];
+            sstpFrame[3] = length[0];
+            for (int i = 4; i < bytesLength; i++)
+            {
+                sstpFrame[i] = bytes[i - 4];
+            }
+            return sstpFrame;
         }
     }
 }
