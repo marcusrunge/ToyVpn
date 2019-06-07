@@ -165,7 +165,7 @@ namespace BackgroundTask
 
             try
             {
-                vpnChannel.StartExistingTransports(assignedClientIPv4list, null, null, assignedRoutes, assignedDomainName, mtuSize, mtuSize + 4, false);
+                vpnChannel.StartExistingTransports(assignedClientIPv4list, null, null, assignedRoutes, assignedDomainName, mtuSize, ushort.MaxValue, false);
             }
             catch (Exception e)
             {
