@@ -13,14 +13,94 @@ namespace BackgroundTask
     internal sealed class ToyVpnPluginContext
     {
         internal HandshakeState HandshakeState { get; set; }
-        //internal ConcurrentQueue<byte[]> ConcurrentQueue { get; set; }
-        internal IAsyncAction HandShake(DatagramSocket datagramSocket, string secret)
+        private DatagramSocket _mainOuterTunnelTransportEndpoint;
+        private DatagramSocket _tunnel;
+        private string _parameters;
+        private Task _dequeueTask;
+        private Task _enqueueTask;
+        internal ConcurrentQueue<byte[]> EncapsulationConcurrentQueue { get; set; }
+        internal ConcurrentQueue<byte[]> DecapsulationConcurrentQueue { get; set; }
+
+        internal void Init(HostName remoteHostName, string remoteServiceName)
+        {            
+            EncapsulationConcurrentQueue = new ConcurrentQueue<byte[]>();
+            DecapsulationConcurrentQueue = new ConcurrentQueue<byte[]>();
+            _mainOuterTunnelTransportEndpoint = new DatagramSocket();
+            _tunnel = new DatagramSocket();
+            _mainOuterTunnelTransportEndpoint.BindServiceNameAsync("11885").AsTask().Wait();
+            _mainOuterTunnelTransportEndpoint.ConnectAsync(new HostName("127.0.0.1"), "11884").AsTask().Wait();
+            _tunnel.ConnectAsync(remoteHostName, remoteServiceName).AsTask().Wait();
+            _dequeueTask = Task.Factory.StartNew(DequeueAction);
+            _enqueueTask = Task.Factory.StartNew(EnqueueAction);
+            _tunnel.MessageReceived += (s, e) =>
+            {
+                DataReader dataReader = e.GetDataReader();
+                if (dataReader.UnconsumedBufferLength > 0)
+                {
+                    if (dataReader.ReadByte() == 0)
+                    {
+                        _parameters = dataReader.ReadString(dataReader.UnconsumedBufferLength);
+                        HandshakeState = HandshakeState.Received;
+                    }
+                    else
+                    {
+                        byte[] readBytes = new byte[dataReader.UnconsumedBufferLength];
+                        dataReader.ReadBytes(readBytes);
+                        DecapsulationConcurrentQueue.Enqueue(readBytes);
+                    }
+                }
+            };            
+        }
+
+        private void EnqueueAction()
+        {
+            while (true)
+            {
+                if (!EncapsulationConcurrentQueue.IsEmpty)
+                {
+                    if (EncapsulationConcurrentQueue.TryDequeue(out byte[] encapsulationPacket))
+                    {
+                        var dataWriter = new DataWriter(_tunnel.OutputStream)
+                        {
+                            UnicodeEncoding = UnicodeEncoding.Utf8
+                        };
+                        dataWriter.WriteBytes(encapsulationPacket);
+                        dataWriter.StoreAsync().AsTask().Wait();
+                        dataWriter.DetachStream();
+                        dataWriter.Dispose();
+                    }
+                }
+            }
+        }
+
+        private void DequeueAction()
+        {
+            while (true)
+            {
+                if (!DecapsulationConcurrentQueue.IsEmpty)
+                {
+                    if (DecapsulationConcurrentQueue.TryDequeue(out byte[] decapsulationPacket))
+                    {
+                        var dataWriter = new DataWriter(_mainOuterTunnelTransportEndpoint.OutputStream)
+                        {
+                            UnicodeEncoding = UnicodeEncoding.Utf8
+                        };
+                        dataWriter.WriteBytes(decapsulationPacket);
+                        dataWriter.StoreAsync().AsTask().Wait();
+                        dataWriter.DetachStream();
+                        dataWriter.Dispose();
+                    }
+                }
+            }
+        }
+
+        internal IAsyncAction HandShake(string secret)
         {
             return Task.Run(async () =>
             {
                 for (int i = 0; i < 3; i++)
                 {
-                    var dataWriter = new DataWriter(datagramSocket.OutputStream)
+                    var dataWriter = new DataWriter(_tunnel.OutputStream)
                     {
                         UnicodeEncoding = UnicodeEncoding.Utf8
                     };
@@ -28,6 +108,7 @@ namespace BackgroundTask
                     dataWriter.WriteString(secret);
                     await dataWriter.StoreAsync();
                     dataWriter.DetachStream();
+                    dataWriter.Dispose();
                 }
 
                 for (int i = 0; i < 50; i++)
@@ -48,16 +129,16 @@ namespace BackgroundTask
             }).AsAsyncAction();
         }
 
-        internal void ConfigureAndConnect(VpnChannel vpnChannel, string parameters)
+        internal void ConfigureAndConnect(VpnChannel vpnChannel)
         {
-            parameters = parameters.TrimEnd();
+            _parameters = _parameters.TrimEnd();
             uint mtuSize = 68;
             var assignedClientIPv4list = new List<HostName>();
             var dnsServerList = new List<HostName>();
             VpnRouteAssignment assignedRoutes = new VpnRouteAssignment();
             VpnDomainNameAssignment assignedDomainName = new VpnDomainNameAssignment();
             var ipv4InclusionRoutes = assignedRoutes.Ipv4InclusionRoutes;
-            foreach (var parameter in parameters.Split(null))
+            foreach (var parameter in _parameters.Split(null))
             {
                 var fields = parameter.Split(",");
                 switch (fields[0])
@@ -90,6 +171,14 @@ namespace BackgroundTask
             {
                 vpnChannel.TerminateConnection(e.Message);
             }
+        }
+
+        internal void Dispose()
+        {
+            _tunnel.CancelIOAsync().AsTask().Wait();
+            _tunnel.Dispose();
+            _mainOuterTunnelTransportEndpoint.CancelIOAsync().AsTask().Wait();
+            _mainOuterTunnelTransportEndpoint.Dispose();
         }
     }
 }

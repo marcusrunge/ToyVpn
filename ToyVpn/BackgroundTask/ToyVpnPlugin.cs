@@ -13,28 +13,22 @@ namespace BackgroundTask
 
     public sealed class ToyVpnPlugin : IVpnPlugIn
     {
+        DatagramSocket _mainOuterTunnelTransport;
         public void Connect(VpnChannel channel)
         {
             channel.PlugInContext = new ToyVpnPluginContext();
 
             string serverPort = "8000";
             string secret = "test";
-            string parameters = null;
-
-            var datagramSocket = new DatagramSocket();
-            channel.AssociateTransport(datagramSocket, null);
-
-            datagramSocket.MessageReceived += (s, e) =>
-            {
-                DataReader dataReader = e.GetDataReader();
-                if (dataReader.UnconsumedBufferLength > 0 && dataReader.ReadByte() == 0)
-                {
-                    parameters = dataReader.ReadString(dataReader.UnconsumedBufferLength);
-                    ((ToyVpnPluginContext)channel.PlugInContext).HandshakeState = HandshakeState.Received;
-                }
-            };
-
             var serverHostName = channel.Configuration.ServerHostNameList[0];
+
+
+
+            _mainOuterTunnelTransport = new DatagramSocket();
+            channel.AssociateTransport(_mainOuterTunnelTransport, null);
+            _mainOuterTunnelTransport.BindEndpointAsync(new HostName("127.0.0.1"), "11884").AsTask().Wait();
+            ((ToyVpnPluginContext)channel.PlugInContext).Init(serverHostName, serverPort);
+            _mainOuterTunnelTransport.ConnectAsync(new HostName("127.0.0.1"), "11885").AsTask().Wait();
 
             //XmlDocument xmlDocument = new XmlDocument();
             //xmlDocument.LoadXml(channel.Configuration.CustomField);
@@ -48,16 +42,16 @@ namespace BackgroundTask
             //    }
             //}
 
-            datagramSocket.ConnectAsync(serverHostName, serverPort).AsTask().GetAwaiter().GetResult();
             ((ToyVpnPluginContext)channel.PlugInContext).HandshakeState = HandshakeState.Waiting;
-            ((ToyVpnPluginContext)channel.PlugInContext).HandShake(datagramSocket, secret).AsTask().GetAwaiter().GetResult();
-            if (((ToyVpnPluginContext)channel.PlugInContext).HandshakeState == HandshakeState.Received) ((ToyVpnPluginContext)channel.PlugInContext).ConfigureAndConnect(channel, parameters);
+            ((ToyVpnPluginContext)channel.PlugInContext).HandShake(secret).AsTask().Wait();
+            if (((ToyVpnPluginContext)channel.PlugInContext).HandshakeState == HandshakeState.Received) ((ToyVpnPluginContext)channel.PlugInContext).ConfigureAndConnect(channel);
             else channel.Stop();
         }
 
         public void Disconnect(VpnChannel channel)
         {
             channel.Stop();
+            ((ToyVpnPluginContext)channel.PlugInContext).Dispose();
             channel.PlugInContext = null;
         }
 
@@ -69,19 +63,18 @@ namespace BackgroundTask
         public void Encapsulate(VpnChannel channel, VpnPacketBufferList packets, VpnPacketBufferList encapulatedPackets)
         {
             while (packets.Size > 0)
-            {   
+            {
                 var packet = packets.RemoveAtBegin();
                 if (packet.Buffer.Capacity <= ushort.MaxValue)
                 {
-                    var packetBuffer = packet.Buffer.ToArray();                    
-                    packetBuffer.CopyTo(0, packet.Buffer, 0, packetBuffer.Length);                    
-                    encapulatedPackets.Append(packet);
+                    var packetBuffer = packet.Buffer.ToArray();
+                    ((ToyVpnPluginContext)channel.PlugInContext).EncapsulationConcurrentQueue.Enqueue(packetBuffer);
                 }
             }
         }
 
         public void Decapsulate(VpnChannel channel, VpnPacketBuffer encapBuffer, VpnPacketBufferList decapsulatedPackets, VpnPacketBufferList controlPacketsToSend)
-        {            
+        {
             if (encapBuffer.Buffer.Capacity > ushort.MaxValue) return;
             var packetBuffer = encapBuffer.Buffer.ToArray();
             packetBuffer.CopyTo(0, encapBuffer.Buffer, 0, packetBuffer.Length);
